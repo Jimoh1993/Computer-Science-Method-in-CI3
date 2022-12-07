@@ -67,8 +67,12 @@ class Solver:
         self._u = u
         self._types = types
         self._delta_t = delta_t
-        self._vdmag = 1
         self._tau = tau
+        self._vdmag = 1
+        self._b = 1
+        self._rprime = 0.1
+
+
 
     @property
     def x(self):
@@ -111,13 +115,30 @@ class Solver:
         return self._delta_t
 
     def __calc_vdterm(self):
-        '''Implementation of the private method of the Solver 
+        '''
+        Implementation of the private method of the Solver 
         class used to obtain the v_d term for the eq. ■, aimed to the corridor example.
         '''
-        vd = np.zeroes([self._n, 2])
-        vd[:1] = self._vdmag
+        vd = np.zeros([self._n, 2])
+        vd[:0] = self._vdmag
         vd[self._types == 1] *= -1 
         return vd
+
+    
+    def __calc_e(self):
+        '''
+        Implementation of the private method of the Solver class used to calculate 
+        the E term of the eq. ■, aimed to the corridor example.
+        '''
+        dtop_wall = np.array([self._n, 1])
+        dbottom_wall = np.array([self._n, 1])
+        e = np.zeros([self._n, 2])
+        # eytop_wall: positive direction along y-axis, if particle move downward to bottom wall'''
+        eytop_wall = -self._b * np.exp(-dtop_wall / self._rprime)
+        # eybottom_wall: negative direction along y-axis, if particle move upward to top wall
+        eybottom_wall = self._b * np.exp(-dbottom_wall / self._rprime)
+        e[:1] = eytop_wall + eybottom_wall
+        return e
     
 
     @tau.setter
