@@ -1,31 +1,57 @@
+# This file is part of MockWalkers.
+# 
+# MockWalkers is free software: you can redistribute it and/or modify it under the terms of
+# the GNU General Public License as published by the Free Software Foundation, either
+# version 3 of the License, or (at your option) any later version.
+# 
+# MockWalkers is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+# PURPOSE. See the GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along with MockWalkers.
+# If not, see https://www.gnu.org/licenses/.
+
 import numpy as np
 
-CORRIDOR_LENGTH = 2.0
+'''
+CORRIDOR_LENGTH: is the horizontal lenght of the visualize wall.
+CORRIDOR_WIDTH: is the vertical lenght of the wall visualize wall.
+'''
+CORRIDOR_LENGTH = 2.0 
 CORRIDOR_WIDTH = 10.0
 
 class Solver:
     """
-    A class used to represent a Solver
+    A class used to represent a Solver for the implementation pedestrian
+    crowd simulation model the motion with Newton-like Ordinary Differential Equations (ODE).
+    𝑥𝑖 = 𝐹(𝑥𝑖, 𝑥𝑖) + 𝑁∑𝑗≠𝑖,𝑗  + 𝐾(𝑥𝑖, 𝑥𝑗) + 𝐸(𝑥𝑖) (∎)
+    𝐸 = 𝐵𝑒𝑥𝑝(−𝑑/𝑅′)
 
     ...
 
     Attributes
     ----------
     _n : int
-        the number of individuals for the crowd simulation
+        the number of individuals for the crowd simulation.
     _x : ndarray
-        an n x 2 array containing the two-dimensional positions of the individuals
+        an n x 2 array containing the two-dimensional positions of the individuals.
     _u : ndarray
-        an n x 2 array containing the two-dimensional velocities of the individuals
+        an n x 2 array containing the two-dimensional velocities of the individuals.
     _types : ndarray
-        an n x 1 array containing the types of individuals in the crowd
+        an n x 1 array containing the types of individuals in the crowd.
     _delta_t : float
-        the discrete time step (in seconds) used for the crowd simulation
+        the discrete time step (in seconds) used for the crowd simulation.
     _tau : float
-        the relaxation time in seconds (default 3)
-    _imp: float
-        impermeability constant b (default 1)
-        impermeability constant rprime (default 0.1)
+        the relaxation time in seconds (default 3).
+    _imp : float
+        Set impermeability constant (i.e. B) (default 1).
+        Set impermeability constant (i.e. Rprime) (default 0.1).
+    _vdmag : float
+        Set desired velocity to be default 1.
+    radius : flaot
+    theta_max: np.radians
+    current_time: float
+    
 
     Methods
     ----------
@@ -184,13 +210,20 @@ class Solver:
         ----------
         vd : ndarray
             the desired velocity field (in meters per second)
+
+        Returns:
+            Returns f the force of applied to the movemnet of particle.
         """
         f = (vd - self.u) / self.tau
         return f
 
     def __calc_e(self):
-        """Implementation of the private method of the Solver class used to calculate
+        """
+        Implementation of the private method of the Solver class used to calculate
         the E term of the eq. ■, aimed to the corridor example.
+
+        Returns:
+            Return E term of the particle movement in either negative or positive direction.
         """
         dbottom = self._x[:, 1]
         dtop = CORRIDOR_WIDTH - dbottom
@@ -200,7 +233,11 @@ class Solver:
         e[:,1] = eytop + eybottom
         return e
 
+
     def iterate(self):
+        '''
+        Implementation of the iterate function in the Solver class.
+        '''
         self._x = self._x + self.delta_t * self._u
 
         vd = self.__calc_vdterm()
@@ -212,6 +249,15 @@ class Solver:
         self._current_time = self._current_time + self._delta_t
 
     def __calc_k(self, vd: np.ndarray):
+        '''
+        Returns numpy array for the calculation of k in the ODE equation for pedestrian crowd movement
+            Parameters
+            ----------
+            vd: Velocity disance of the particle.
+
+            Returns:
+                numpy array for the calculation of k
+        '''
 
         A = self._int_constant
         R = self._int_radius
@@ -265,10 +311,16 @@ class Solver:
         )
         k = np.nan_to_num(k)
         return k
+    
+
 
     def __calc_vdterm(self):
-        """Implementation of the private method of the Solver
+        """
+        Implementation of the private method of the Solver
         class used to obtain the v_d term for the eq. ■, aimed to the corridor example.
+
+        Returns:
+        Velocity distance (vd) term for the particle movement in either positive or negative direction. 
         """
         vd = np.zeros([self._n, 2])
         vd[:, 0] = self._vdmag
